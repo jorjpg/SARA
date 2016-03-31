@@ -32,6 +32,20 @@ String g="Grados: ";
 String h="Porcentaje de humedad: ";
 String fecha="Fecha: ";
 
+byte sensorInterrupt = 0;  // 0 = digital pin 2
+byte sensorPin       = 2;
+float calibrationFactor = 4.5;
+volatile byte pulseCount;  
+float flowRate;
+unsigned int flowMilliLitres;
+unsigned long totalMilliLitres;
+unsigned long oldTime;
+boolean pasandoAgua = false;
+
+int relay1 = 3;
+int relay2 = 4;
+int motobomba = 5;
+
 /* TFT */
 #include <UTFT.h>
 #include <UTouch.h>
@@ -113,6 +127,51 @@ void bootloader(){
 	pregchangmovil();
 }
 
+void pulseCounter()
+{
+  // Incrementa el contador de pulsos
+  pulseCount++;
+}
+
+void pasAgua(){
+	if((millis() - oldTime) > 1000)    // Sólo ejecuta contadores de proceso una vez por segundo
+  { 
+    detachInterrupt(sensorInterrupt);
+    flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
+	oldTime = millis();
+	flowMilliLitres = (flowRate / 60) * 1000;
+	// Añadir los mililitros que pasaron en este segundo para el total acumulado
+    totalMilliLitres += flowMilliLitres;
+	unsigned int frac;
+	// Imprime la tasa de flujo para este segundo en litros/minutos
+    Serial.print("Flow rate: ");
+    Serial.print(int(flowRate));  // Imprime la parte entera de la variable
+	if (int(flowRate)>0){
+		pasandoAgua=true;
+	}
+	else {
+		pasandoAgua=false;
+	}
+    Serial.print(".");             // Imprime el punto decimal
+    // Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
+    frac = (flowRate - int(flowRate)) * 10;
+    Serial.print(frac, DEC) ;      // Imprimir la parte fraccionaria de la variable
+    Serial.print("L/min");
+    // Imprimir el número de litros que fluyó en este segundo
+    Serial.print("  Current Liquid Flowing: ");             // separador de salida
+    Serial.print(flowMilliLitres);
+    Serial.print("mL/Sec");
+	// Imprimir el total acumulado de litros que fluyó desde el inicio
+    Serial.print("  Output Liquid Quantity: ");             // separador de salida
+    Serial.print(totalMilliLitres);
+    Serial.println("mL"); 
+	// Restablecer el contador de pulsos para que podamos empezar a incrementar de nuevo
+    pulseCount = 0;
+	// Activa interrupt de nuevo, hemos terminado de enviar la salida.
+    attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+  }
+}
+
 void update(){
 	/* GSM */
 	DHT.read11(DHT11_PIN);
@@ -140,6 +199,46 @@ void update(){
 //  fecha+=now.minute();
 //  fecha+=':';
 //  fecha+=now.second();
+
+if (hum<40.0){
+	if (modulos=1){
+		digitalWrite(relay1, LOW);
+		digitalWrite(relay2, HIGH);
+	}
+	if (modulos=2){
+		digitalWrite(relay2, LOW);
+		digitalWrite(relay1, HIGH);
+	}
+	if(modulos=3){
+		digitalWrite(relay1, LOW);
+		digitalWrite(relya2, LOW);
+	}
+	digitalWrite(motobomba, LOW);
+	pasAgua();
+	Serial.println("ARRANCO");
+	delay(5000);
+	if(pasandoAgua){
+		digitalWrite(motobomba, LOW);  
+	}
+	else {
+		digitalWrite(motobomba, HIGH);
+	}
+}
+else if (hum>50.0) {
+	if (modulos=1){
+		digitalWrite(relay1, HIGH);
+		digitalWrite(relay2, HIGH);
+	}
+	if (modulos=2){
+		digitalWrite(relay2, HIGH);
+		digitalWrite(relay1, HIGH);
+	}
+	if(modulos=3){
+		digitalWrite(relay1, HIGH);
+		digitalWrite(relya2, HIGH);
+	}
+	digitalWrite(motobomba, HIGH);
+}
   
   if(posicion){    
 sms.GetSMS(posicion, n, smsbuffer, 100);
@@ -591,6 +690,19 @@ void setup()
   myTouch.setPrecision(PREC_LOW);
   myGLCD.setFont(BigFont);
   segpin=813276;
+  
+  // flow rate
+  
+  pinMode(sensorPin, INPUT);
+  digitalWrite(sensorPin, HIGH);
+
+  pulseCount        = 0;
+  flowRate          = 0.0;
+  flowMilliLitres   = 0;
+  totalMilliLitres  = 0;
+  oldTime           = 0;
+  
+  attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
   
   /* GSM */
   Wire.begin(); // Inicia el puerto I2C
