@@ -74,30 +74,26 @@ void msjerror(char *error){
 	myGLCD.setColor(0, 255, 0);
 }
 
-void updateStr(int val)
-{
-  if (stCurrentLen<maxlen)
-  {
-    stCurrent[stCurrentLen]=val;
-    stCurrent[stCurrentLen+1]='\0';
-    stCurrentLen++;
-    myGLCD.setColor(0, 255, 0);
-    myGLCD.print(stCurrent, LEFT, 224);
-  }
-  else
-  {
-	msjerror("LIMITE AGOTADO!");
-  }
+void updateStr(int val){
+	if (stCurrentLen<maxlen){
+		stCurrent[stCurrentLen]=val;
+		stCurrent[stCurrentLen+1]='\0';
+		stCurrentLen++;
+		myGLCD.setColor(0, 255, 0);
+		myGLCD.print(stCurrent, LEFT, 224);
+	}
+	else{
+		msjerror("LIMITE AGOTADO!");
+	}
 }
 
-void waitForIt(int x1, int y1, int x2, int y2)
-{
-  myGLCD.setColor(255, 0, 0);
-  myGLCD.drawRoundRect (x1, y1, x2, y2);
-  while (myTouch.dataAvailable())
-    myTouch.read();
-  myGLCD.setColor(255, 255, 255);
-  myGLCD.drawRoundRect (x1, y1, x2, y2);
+void waitForIt(int x1, int y1, int x2, int y2){
+	myGLCD.setColor(255, 0, 0);
+	myGLCD.drawRoundRect (x1, y1, x2, y2);
+	while (myTouch.dataAvailable())
+		myTouch.read();
+	myGLCD.setColor(255, 255, 255);
+	myGLCD.drawRoundRect (x1, y1, x2, y2);
 }
 
 void bootloader(){
@@ -129,172 +125,167 @@ void bootloader(){
 
 void pulseCounter()
 {
-  // Incrementa el contador de pulsos
-  pulseCount++;
+	// Incrementa el contador de pulsos
+	pulseCount++;
 }
 
 void pasAgua(){
 	if((millis() - oldTime) > 1000)    // Sólo ejecuta contadores de proceso una vez por segundo
-  { 
-    detachInterrupt(sensorInterrupt);
-    flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
-	oldTime = millis();
-	flowMilliLitres = (flowRate / 60) * 1000;
-	// Añadir los mililitros que pasaron en este segundo para el total acumulado
-    totalMilliLitres += flowMilliLitres;
-	unsigned int frac;
-	// Imprime la tasa de flujo para este segundo en litros/minutos
-    Serial.print("Flow rate: ");
-    Serial.print(int(flowRate));  // Imprime la parte entera de la variable
+	{ 
+		detachInterrupt(sensorInterrupt);
+		flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
+		oldTime = millis();
+		flowMilliLitres = (flowRate / 60) * 1000;
+		// Añadir los mililitros que pasaron en este segundo para el total acumulado
+		totalMilliLitres += flowMilliLitres;
+		unsigned int frac;
+		// Imprime la tasa de flujo para este segundo en litros/minutos
+		Serial.print("Flow rate: ");
+		Serial.print(int(flowRate));  // Imprime la parte entera de la variable
 	if (int(flowRate)>0){
 		pasandoAgua=true;
 	}
 	else {
 		pasandoAgua=false;
 	}
-    Serial.print(".");             // Imprime el punto decimal
-    // Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
-    frac = (flowRate - int(flowRate)) * 10;
-    Serial.print(frac, DEC) ;      // Imprimir la parte fraccionaria de la variable
-    Serial.print("L/min");
-    // Imprimir el número de litros que fluyó en este segundo
-    Serial.print("  Current Liquid Flowing: ");             // separador de salida
-    Serial.print(flowMilliLitres);
-    Serial.print("mL/Sec");
+	Serial.print(".");             // Imprime el punto decimal
+	// Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
+	frac = (flowRate - int(flowRate)) * 10;
+	Serial.print(frac, DEC) ;      // Imprimir la parte fraccionaria de la variable
+	Serial.print("L/min");
+	// Imprimir el número de litros que fluyó en este segundo
+	Serial.print("  Current Liquid Flowing: ");             // separador de salida
+	Serial.print(flowMilliLitres);
+	Serial.print("mL/Sec");
 	// Imprimir el total acumulado de litros que fluyó desde el inicio
-    Serial.print("  Output Liquid Quantity: ");             // separador de salida
-    Serial.print(totalMilliLitres);
-    Serial.println("mL"); 
+	Serial.print("  Output Liquid Quantity: ");             // separador de salida
+	Serial.print(totalMilliLitres);
+	Serial.println("mL"); 
 	// Restablecer el contador de pulsos para que podamos empezar a incrementar de nuevo
-    pulseCount = 0;
+	pulseCount = 0;
 	// Activa interrupt de nuevo, hemos terminado de enviar la salida.
-    attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
-  }
+	attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+	}
 }
 
 void update(){
 	/* GSM */
 	DHT.read11(DHT11_PIN);
-  DateTime now = RTC.now();
-  posicion = sms.IsSMSPresent(SMS_UNREAD);
+	DateTime now = RTC.now();
+	posicion = sms.IsSMSPresent(SMS_UNREAD);
 
-  float temp=DHT.temperature;
-  float hum=DHT.humidity;
+	float temp=DHT.temperature;
+	float hum=DHT.humidity;
 	
 	humidity=DHT.humidity;
 	temperature=DHT.temperature;
 	
-  Serial.println(temp);
-  Serial.println(hum);
+	Serial.println(temp);
+	Serial.println(hum);
 
-//  fecha+=now.day();
-//  fecha+='/';
-//  fecha+=now.month();
-//  fecha+='/';
-//  fecha+=now.year();
-//  fecha+='\n';
-//  fecha+="Hora: ";
-//  fecha+=now.hour();
-//  fecha+=':';
-//  fecha+=now.minute();
-//  fecha+=':';
-//  fecha+=now.second();
+//	fecha+=now.day();
+//	fecha+='/';
+//	fecha+=now.month();
+//	fecha+='/';
+//	fecha+=now.year();
+//	fecha+='\n';
+//	fecha+="Hora: ";
+//	fecha+=now.hour();
+//	fecha+=':';
+//	fecha+=now.minute();
+//	fecha+=':';
+//	fecha+=now.second();
 
-if (hum<40.0){
-	if (modulos=1){
-		digitalWrite(relay1, LOW);
-		digitalWrite(relay2, HIGH);
+	String nimconcat =  String(plusig + nim);
+	char nimconcat2[11];
+	nimconcat.toCharArray(nimconcat2, 11);
+	char motobombaErr[]="ERROR: Compruebe motobomba.";
+
+	if (hum<40.0){
+		if (modulos=1){
+			digitalWrite(relay1, LOW);
+			digitalWrite(relay2, HIGH);
+		}
+		if (modulos=2){
+			digitalWrite(relay2, LOW);
+			digitalWrite(relay1, HIGH);
+		}
+		if(modulos=3){
+			digitalWrite(relay1, LOW);
+			digitalWrite(relya2, LOW);
+		}
+		digitalWrite(motobomba, LOW);
+		pasAgua();
+		Serial.println("ARRANCO");
+		delay(5000);
+		if(pasandoAgua){
+			digitalWrite(motobomba, LOW);  
+		}
+		else {
+			digitalWrite(motobomba, HIGH);
+			Serial.println("ERROR: Compruebe motobomba.");
+			sms.SendSMS(nimconcat2,motobombaErr);
+			Serial.println("\nSMS sent OK");
+			delay(5000);
+		}
 	}
-	if (modulos=2){
-		digitalWrite(relay2, LOW);
-		digitalWrite(relay1, HIGH);
-	}
-	if(modulos=3){
-		digitalWrite(relay1, LOW);
-		digitalWrite(relya2, LOW);
-	}
-	digitalWrite(motobomba, LOW);
-	pasAgua();
-	Serial.println("ARRANCO");
-	delay(5000);
-	if(pasandoAgua){
-		digitalWrite(motobomba, LOW);  
-	}
-	else {
+	else if (hum>50.0) {
+		if (modulos=1){
+			digitalWrite(relay1, HIGH);
+			digitalWrite(relay2, HIGH);
+		}
+		if (modulos=2){
+			digitalWrite(relay2, HIGH);
+			digitalWrite(relay1, HIGH);
+		}
+		if(modulos=3){
+			digitalWrite(relay1, HIGH);
+			digitalWrite(relya2, HIGH);
+		}
 		digitalWrite(motobomba, HIGH);
 	}
-}
-else if (hum>50.0) {
-	if (modulos=1){
-		digitalWrite(relay1, HIGH);
-		digitalWrite(relay2, HIGH);
-	}
-	if (modulos=2){
-		digitalWrite(relay2, HIGH);
-		digitalWrite(relay1, HIGH);
-	}
-	if(modulos=3){
-		digitalWrite(relay1, HIGH);
-		digitalWrite(relya2, HIGH);
-	}
-	digitalWrite(motobomba, HIGH);
-}
   
-  if(posicion){    
-sms.GetSMS(posicion, n, smsbuffer, 100);
-String numeroreal(n);
-
-String nimconcat =  String(plusig + nim);
-char nimconcat2[11];
-nimconcat.toCharArray(nimconcat2, 11);
- 
-  if(numeroreal==nim){
-   if(smsbuffer[0]=='1'){
-   h+=hum;
-   Serial.println(smsbuffer[0]);
-   digitalWrite(ledVer,HIGH);
-   digitalWrite(ledAma,LOW);
-   int longitud;
-   longitud=h.length();
-
-   for (int i=0;i<longitud;i++)
-   {
-    hum1[i]=h.charAt(i);
-   }
-   sms.SendSMS(nimconcat2,hum1);
-   Serial.println("\nSMS sent OK");
-   delay(5000);
-
-    h="Porcentaje de humedad: ";
- }
-
-
-
-   else if (smsbuffer[0]=='2'){
-    g+=temp;
-    Serial.println(smsbuffer[0]);
-   digitalWrite(ledVer,HIGH);
-   digitalWrite(ledAma,LOW);
-   int longitud;
-   longitud=g.length();
-
-   for (int i=0;i<longitud;i++)
-   {
-    temp1[i]=g.charAt(i);
-   }
-   sms.SendSMS(nimconcat2,temp1);
-   Serial.println("\nSMS sent OK");
-   delay(5000);
-   g="Grados: ";
-  }
-    }
-  } 
-    while (posicion1 = sms.IsSMSPresent(SMS_READ))
-  {
-    Serial.println(posicion1);
-    sms.DeleteSMS(posicion1);
-    Serial.println("Mensaje borrado");
-  }
+	if(posicion){    
+		sms.GetSMS(posicion, n, smsbuffer, 100);
+		String numeroreal(n);
+		if(numeroreal==nim){
+			if(smsbuffer[0]=='1'){
+				h+=hum;
+				Serial.println(smsbuffer[0]);
+				digitalWrite(ledVer,HIGH);
+				digitalWrite(ledAma,LOW);
+				int longitud;
+				longitud=h.length();
+				for (int i=0;i<longitud;i++){
+					hum1[i]=h.charAt(i);
+				}
+				sms.SendSMS(nimconcat2,hum1);
+				Serial.println("\nSMS sent OK");
+				delay(5000);
+				h="Porcentaje de humedad: ";
+			}
+			else if (smsbuffer[0]=='2'){
+				g+=temp;
+				Serial.println(smsbuffer[0]);
+				digitalWrite(ledVer,HIGH);
+				digitalWrite(ledAma,LOW);
+				int longitud;
+				longitud=g.length();
+				for (int i=0;i<longitud;i++){
+					temp1[i]=g.charAt(i);
+				}
+				sms.SendSMS(nimconcat2,temp1);
+				Serial.println("\nSMS sent OK");
+				delay(5000);
+				g="Grados: ";
+			}
+		}
+	} 
+	while (posicion1 = sms.IsSMSPresent(SMS_READ)){
+		Serial.println(posicion1);
+		sms.DeleteSMS(posicion1);
+		Serial.println("Mensaje borrado");
+	}
 	
 	day=now.day();
 	month=now.month();
@@ -683,44 +674,44 @@ void pantalla2(){
 
 void setup()
 {
-  Serial.begin(9600);
-  myGLCD.InitLCD(LANDSCAPE);
-  myGLCD.clrScr();
-  myTouch.InitTouch(LANDSCAPE);
-  myTouch.setPrecision(PREC_LOW);
-  myGLCD.setFont(BigFont);
-  segpin=813276;
-  
-  // flow rate
-  
-  pinMode(sensorPin, INPUT);
-  digitalWrite(sensorPin, HIGH);
-
-  pulseCount        = 0;
-  flowRate          = 0.0;
-  flowMilliLitres   = 0;
-  totalMilliLitres  = 0;
-  oldTime           = 0;
-  
-  attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
-  
-  /* GSM */
-  Wire.begin(); // Inicia el puerto I2C
+	Serial.begin(9600);
+	myGLCD.InitLCD(LANDSCAPE);
+	myGLCD.clrScr();
+	myTouch.InitTouch(LANDSCAPE);
+	myTouch.setPrecision(PREC_LOW);
+	myGLCD.setFont(BigFont);
+	segpin=813276;
+	
+	// flow rate
+	
+	pinMode(sensorPin, INPUT);
+	digitalWrite(sensorPin, HIGH);
+	
+	pulseCount        = 0;
+	flowRate          = 0.0;
+	flowMilliLitres   = 0;
+	totalMilliLitres  = 0;
+	oldTime           = 0;
+	
+	attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+	
+	/* GSM */
+	Wire.begin(); // Inicia el puerto I2C
 	RTC.begin(); // Inicia la comunicación con el RTC
 	RTC.adjust(DateTime(__DATE__, __TIME__));
-  
-  pinMode(ledAma,OUTPUT);
-  pinMode(ledVer,OUTPUT);
-  //Serial connection.
-  Serial.begin(9600);
-  Serial.println("GSM Shield testing.");
-
-  if (gsm.begin(2400)){
-    Serial.println("\nstatus=READY");
-    started=true;  
-  }
-  else Serial.println("\nstatus=IDLE");
- 
+	
+	pinMode(ledAma,OUTPUT);
+	pinMode(ledVer,OUTPUT);
+	//Serial connection.
+	Serial.begin(9600);
+	Serial.println("GSM Shield testing.");
+	
+	if (gsm.begin(2400)){
+		Serial.println("\nstatus=READY");
+		started=true;  
+	}
+	else Serial.println("\nstatus=IDLE");
+	
 } 
 
 void loop()
