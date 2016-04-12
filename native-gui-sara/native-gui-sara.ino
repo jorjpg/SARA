@@ -179,9 +179,9 @@ void update(){
 	myGLCD.printNumI(minute, 245, 52);
 	myGLCD.printNumF(temperature,1, 200, 97);
 	myGLCD.printNumF(humidity,1, 200, 142);
-	myGLCD.print("Regando", 10, 142);
-	delay(1000);
-	myGLCD.print("       ", 10, 142);
+	// myGLCD.print("Regando", 10, 142);
+	// delay(1000);
+	// myGLCD.print("       ", 10, 142);
 
 	if (hum<40.0){
 		if (modulos==1){
@@ -197,18 +197,15 @@ void update(){
 			digitalWrite(relay2, LOW);
 		}
 		digitalWrite(motobomba, LOW);
-		Serial.println("ARRANCO");
+		Serial.println("ARRANCO - Flujo de Agua");
 		delay(5000);
 		detachInterrupt(sensorInterrupt);
 		flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
 		oldTime = millis();
 		flowMilliLitres = (flowRate / 60) * 1000;
-		// Añadir los mililitros que pasaron en este segundo para el total acumulado
 		totalMilliLitres += flowMilliLitres;
 		unsigned int frac;
-		// Imprime la tasa de flujo para este segundo en litros/minutos
 		Serial.print("Flow rate: ");
-		//Serial.print(int(flowRate));  // Imprime la parte entera de la variable
 		if (flowMilliLitres>1){
 			Serial.print("ESTA PASANDO AGUA");
 			pasandoAgua=true;
@@ -216,23 +213,21 @@ void update(){
 		else {
 			pasandoAgua=false;
 		}
-		// Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
 		frac = (flowRate - int(flowRate)) * 10;
-		// Restablecer el contador de pulsos para que podamos empezar a incrementar de nuevo
 		pulseCount = 0;
-		// Activa interrupt de nuevo, hemos terminado de enviar la salida.
 		attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
 
 		if(pasandoAgua){
 			digitalWrite(motobomba, LOW);  
+			myGLCD.print("Regando", 10, 142);
 		}
 		else {
 			Serial.println("ERROR: Compruebe motobomba.");
 			digitalWrite(motobomba, HIGH);
 			sms.SendSMS(nimconcat2,motobombaErr);
-			Serial.println("\nSMS sent OK");
+			Serial.println("\nSMS Enviado OK");
+			myGLCD.print("       ", 10, 142);
 		}
-		flowMilliLitres=0;
 	}
 	if (hum>50.0) {
 		if (modulos==1){
@@ -249,7 +244,7 @@ void update(){
 		}
 		digitalWrite(motobomba, HIGH);
 	}
-
+  
 	if(posicion){    
 		sms.GetSMS(posicion, n, smsbuffer, 100);
 		String numeroreal(n);
@@ -265,7 +260,7 @@ void update(){
 					hum1[i]=h.charAt(i);
 				}
 				sms.SendSMS(nimconcat2,hum1);
-				Serial.println("\nSMS sent OK");
+				Serial.println("\nSMS Enviado OK");
 				delay(5000);
 				h="Porcentaje de humedad: ";
 			}
@@ -292,6 +287,8 @@ void update(){
 		Serial.println("Mensaje borrado");
 	}
 	
+	flowMilliLitres=0;
+	oldTime=0;
 }
 
 void pregchangmovil(){
