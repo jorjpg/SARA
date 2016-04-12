@@ -12,7 +12,7 @@
 #include <SoftwareSerial.h>
 #include "sms.h"
 #include <dht.h>
-#define DHT11_PIN 2
+#define DHT11_PIN 7
 dht DHT;
 SMSGSM sms;
 RTC_DS1307 RTC;
@@ -129,45 +129,6 @@ void pulseCounter()
 	pulseCount++;
 }
 
-void pasAgua(){
-	if((millis() - oldTime) > 1000)    // Sólo ejecuta contadores de proceso una vez por segundo
-	{ 
-		detachInterrupt(sensorInterrupt);
-		flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
-		oldTime = millis();
-		flowMilliLitres = (flowRate / 60) * 1000;
-		// Añadir los mililitros que pasaron en este segundo para el total acumulado
-		totalMilliLitres += flowMilliLitres;
-		unsigned int frac;
-		// Imprime la tasa de flujo para este segundo en litros/minutos
-		Serial.print("Flow rate: ");
-		Serial.print(int(flowRate));  // Imprime la parte entera de la variable
-	if (int(flowRate)>0){
-		pasandoAgua=true;
-	}
-	else {
-		pasandoAgua=false;
-	}
-	Serial.print(".");             // Imprime el punto decimal
-	// Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
-	frac = (flowRate - int(flowRate)) * 10;
-	Serial.print(frac, DEC) ;      // Imprimir la parte fraccionaria de la variable
-	Serial.print("L/min");
-	// Imprimir el número de litros que fluyó en este segundo
-	Serial.print("  Current Liquid Flowing: ");             // separador de salida
-	Serial.print(flowMilliLitres);
-	Serial.print("mL/Sec");
-	// Imprimir el total acumulado de litros que fluyó desde el inicio
-	Serial.print("  Output Liquid Quantity: ");             // separador de salida
-	Serial.print(totalMilliLitres);
-	Serial.println("mL"); 
-	// Restablecer el contador de pulsos para que podamos empezar a incrementar de nuevo
-	pulseCount = 0;
-	// Activa interrupt de nuevo, hemos terminado de enviar la salida.
-	attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
-	}
-}
-
 void update(){
 	/* GSM */
 	DHT.read11(DHT11_PIN);
@@ -196,55 +157,99 @@ void update(){
 //	fecha+=':';
 //	fecha+=now.second();
 
+	day=now.day();
+	month=now.month();
+	year=now.year();
+	hour=now.hour();
+	minute=now.minute();
+
 	String nimconcat =  String(plusig + nim);
 	char nimconcat2[11];
 	nimconcat.toCharArray(nimconcat2, 11);
 	char motobombaErr[]="ERROR: Compruebe motobomba.";
 
+	myGLCD.setFont(BigFont);
+	myGLCD.setColor(255,255,255);
+	myGLCD.setBackColor(0,0,0);
+	myGLCD.print("  ", 12, 52);
+	myGLCD.printNumI(day, 12, 52);
+	myGLCD.printNumI(month, 63, 52);
+	myGLCD.printNumI(year, 114, 52);
+	myGLCD.printNumI(hour, 200, 52);
+	myGLCD.printNumI(minute, 245, 52);
+	myGLCD.printNumF(temperature,1, 200, 97);
+	myGLCD.printNumF(humidity,1, 200, 142);
+	myGLCD.print("Regando", 10, 142);
+	delay(1000);
+	myGLCD.print("       ", 10, 142);
+
 	if (hum<40.0){
-		if (modulos=1){
+		if (modulos==1){
 			digitalWrite(relay1, LOW);
 			digitalWrite(relay2, HIGH);
 		}
-		if (modulos=2){
+		if (modulos==2){
 			digitalWrite(relay2, LOW);
 			digitalWrite(relay1, HIGH);
 		}
-		if(modulos=3){
+		if(modulos==3){
 			digitalWrite(relay1, LOW);
-			digitalWrite(relya2, LOW);
+			digitalWrite(relay2, LOW);
 		}
 		digitalWrite(motobomba, LOW);
-		pasAgua();
 		Serial.println("ARRANCO");
 		delay(5000);
+		detachInterrupt(sensorInterrupt);
+		flowRate = ((1000.0 / (millis() - oldTime)) * pulseCount) / calibrationFactor;
+		oldTime = millis();
+		flowMilliLitres = (flowRate / 60) * 1000;
+		// Añadir los mililitros que pasaron en este segundo para el total acumulado
+		totalMilliLitres += flowMilliLitres;
+		unsigned int frac;
+		// Imprime la tasa de flujo para este segundo en litros/minutos
+		Serial.print("Flow rate: ");
+		//Serial.print(int(flowRate));  // Imprime la parte entera de la variable
+		if (flowMilliLitres>1){
+			Serial.print("ESTA PASANDO AGUA");
+			pasandoAgua=true;
+		}
+		else {
+			pasandoAgua=false;
+		}
+		// Determinar la parte fraccionaria y multiplicado por 10 nos da 1 decimal.
+		frac = (flowRate - int(flowRate)) * 10;
+		// Restablecer el contador de pulsos para que podamos empezar a incrementar de nuevo
+		pulseCount = 0;
+		// Activa interrupt de nuevo, hemos terminado de enviar la salida.
+		attachInterrupt(sensorInterrupt, pulseCounter, FALLING);
+
 		if(pasandoAgua){
 			digitalWrite(motobomba, LOW);  
 		}
 		else {
-			digitalWrite(motobomba, HIGH);
 			Serial.println("ERROR: Compruebe motobomba.");
+			digitalWrite(motobomba, HIGH);
 			sms.SendSMS(nimconcat2,motobombaErr);
 			Serial.println("\nSMS sent OK");
-			delay(5000);
 		}
+		flowMilliLitres=0;
 	}
-	else if (hum>50.0) {
-		if (modulos=1){
+	if (hum>50.0) {
+		if (modulos==1){
 			digitalWrite(relay1, HIGH);
 			digitalWrite(relay2, HIGH);
 		}
-		if (modulos=2){
+		if (modulos==2){
 			digitalWrite(relay2, HIGH);
 			digitalWrite(relay1, HIGH);
 		}
-		if(modulos=3){
+		if(modulos==3){
 			digitalWrite(relay1, HIGH);
-			digitalWrite(relya2, HIGH);
+			digitalWrite(relay2, HIGH);
 		}
 		digitalWrite(motobomba, HIGH);
 	}
-  
+
 	if(posicion){    
 		sms.GetSMS(posicion, n, smsbuffer, 100);
 		String numeroreal(n);
@@ -287,25 +292,6 @@ void update(){
 		Serial.println("Mensaje borrado");
 	}
 	
-	day=now.day();
-	month=now.month();
-	year=now.year();
-	hour=now.hour();
-	minute=now.minute();
-	myGLCD.setFont(BigFont);
-	myGLCD.setColor(255,255,255);
-	myGLCD.setBackColor(0,0,0);
-	myGLCD.print("  ", 12, 52);
-	myGLCD.printNumI(day, 12, 52);
-	myGLCD.printNumI(month, 63, 52);
-	myGLCD.printNumI(year, 114, 52);
-	myGLCD.printNumI(hour, 200, 52);
-	myGLCD.printNumI(minute, 245, 52);
-	myGLCD.printNumF(temperature,1, 200, 97);
-	myGLCD.printNumF(humidity,1, 200, 142);
-	myGLCD.print("Regando", 10, 142);
-	delay(1000);
-	myGLCD.print("       ", 10, 142);
 }
 
 void pregchangmovil(){
@@ -674,6 +660,12 @@ void pantalla2(){
 
 void setup()
 {
+	digitalWrite(relay1,HIGH);
+  digitalWrite(relay2,HIGH);
+  digitalWrite(motobomba,HIGH);
+  pinMode(relay1,OUTPUT);
+  pinMode(relay2,OUTPUT);
+  pinMode(motobomba,OUTPUT);
 	Serial.begin(9600);
 	myGLCD.InitLCD(LANDSCAPE);
 	myGLCD.clrScr();
