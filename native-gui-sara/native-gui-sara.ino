@@ -1,10 +1,3 @@
-// (C) 2016, Aprendices SENA Ficha 813276, Regional Norte de Santander.
-
-/***********
-**  SARA  **
-************/
-
-/* GSM */
 #include <Wire.h>
 #include "RTClib.h"
 #include "SIM900.h"
@@ -245,8 +238,23 @@ void update(){
     digitalWrite(motobomba, HIGH);
   }
 
-  if (hour==15 && minute==30){
-      digitalWrite(ledAma, HIGH);
+  if (hour==22 && minute==00){
+    
+     if (modulos==1){
+      digitalWrite(relay1, LOW);
+      digitalWrite(relay2, HIGH);
+      }
+    if (modulos==2){
+      digitalWrite(relay2, LOW);
+      digitalWrite(relay1, HIGH);
+    }
+    if(modulos==3){
+      digitalWrite(relay1, LOW);
+      digitalWrite(relay2, LOW);
+    }
+    delay (50000);
+    digitalWrite(relay1, HIGH);
+    digitalWrite(relay2, HIGH);
     }
   
   if(posicion){    
