@@ -1,3 +1,10 @@
+// (C) 2016, Aprendices SENA Ficha 813276, Regional Norte de Santander.
+
+/***********
+**  SARA  **
+************/
+
+/* GSM */
 #include <Wire.h>
 #include "RTClib.h"
 #include "SIM900.h"
@@ -217,8 +224,8 @@ void update(){
     else {
       Serial.println("ERROR: Compruebe motobomba.");
       digitalWrite(motobomba, HIGH);
-//      sms.SendSMS(nimconcat2,motobombaErr);
-//      Serial.println("\nSMS Enviado OK");
+      sms.SendSMS(nimconcat2,motobombaErr);
+      Serial.println("\nSMS Enviado OK");
       myGLCD.print("       ", 10, 142);
     }
   }
@@ -237,13 +244,14 @@ void update(){
     }
     digitalWrite(motobomba, HIGH);
   }
+  
+  //
 
   if (hour==22 && minute==00){
-    
-     if (modulos==1){
+	if (modulos==1){
       digitalWrite(relay1, LOW);
       digitalWrite(relay2, HIGH);
-      }
+    }
     if (modulos==2){
       digitalWrite(relay2, LOW);
       digitalWrite(relay1, HIGH);
@@ -255,7 +263,7 @@ void update(){
     delay (50000);
     digitalWrite(relay1, HIGH);
     digitalWrite(relay2, HIGH);
-    }
+  }
   
   if(posicion){    
     sms.GetSMS(posicion, n, smsbuffer, 100);
